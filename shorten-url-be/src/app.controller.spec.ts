@@ -16,7 +16,23 @@ describe('AppController', () => {
 
   describe('root', () => {
     it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+      expect(appController.getAppInfo()).toEqual({
+        name: 'URL Shortener API',
+        version: '1.0.0',
+        description: 'URL shortening service',
+        environment: 'development',
+        endpoints: {
+          health: '/health',
+          createUrl: '/url',
+          createBulkUrls: '/url/bulk',
+          getUrl: '/url/:id',
+        },
+        features: {
+          caching: true,
+          rateLimiting: true,
+          monitoring: true,
+        },
+      });
     });
   });
 });
