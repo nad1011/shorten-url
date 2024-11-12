@@ -12,6 +12,7 @@ import { Url } from './schemas/url.schema';
 import { ConfigService } from '@nestjs/config';
 import { RedisClientType } from 'redis';
 import { RedisStore } from 'cache-manager-redis-yet';
+import { BulkCreateResult } from './types';
 
 @Injectable()
 export class UrlService {
@@ -79,7 +80,7 @@ export class UrlService {
         return existingIds;
       }
 
-      const shortId = (await this.generateUniqueShortIds()) as string;
+      const shortId = await this.generateUniqueShortIds(1)[0];
 
       const url = new this.urlModel({
         shortId,
@@ -95,16 +96,117 @@ export class UrlService {
         .expire('url_mappings', this.configService.get('cache.ttl') * 1000)
         .exec();
 
-      // await this.cacheManager.set(
-      //   `url:${shortId}`,
-      //   originalUrl,
-      //   this.configService.get('cache.ttl') * 1000,
-      // );
-
       return url.shortId;
     } catch (error) {
       console.error('Error in createShortUrl:', error);
       throw new Error('Error creating short URL');
+    }
+  }
+
+  async createBulkShortUrls(originalUrls: string[]): Promise<BulkCreateResult> {
+    const batchSize = this.configService.get('url.bulkBatchSize', 1000);
+    const result: BulkCreateResult = {
+      successful: [],
+      failed: [],
+      existing: [],
+    };
+
+    try {
+      if (!Array.isArray(originalUrls)) {
+        throw new BadRequestException('Input must be an array of URLs');
+      }
+
+      if (originalUrls.length === 0) {
+        throw new BadRequestException('URL array cannot be empty');
+      }
+
+      const processedUrls = await Promise.all(
+        originalUrls.map(async (url) => {
+          try {
+            const existingId = await this.findByOriginalUrl(url);
+            if (existingId) {
+              result.existing.push({
+                originalUrl: url,
+                shortId: existingId,
+              });
+              return null;
+            }
+            return url;
+          } catch (error) {
+            result.failed.push({
+              originalUrl: url,
+              error: error.message,
+            });
+            return null;
+          }
+        }),
+      );
+
+      const newUrls = processedUrls.filter(
+        (url): url is string => url !== null,
+      );
+
+      if (newUrls.length > 0) {
+        const shortIds = (await this.generateUniqueShortIds(
+          newUrls.length,
+        )) as string[];
+
+        const urlDocuments = newUrls.map((url, index) => ({
+          shortId: shortIds[index],
+          originalUrl: url,
+          lastAccessed: new Date(),
+        }));
+
+        for (let i = 0; i < urlDocuments.length; i += batchSize) {
+          const batch = urlDocuments.slice(i, i + batchSize);
+          try {
+            const insertedDocs = await this.urlModel.insertMany(batch, {
+              ordered: false,
+            });
+
+            const pipeline = this.redisClient.multi();
+
+            insertedDocs.forEach((doc) => {
+              pipeline.hSet('url_mappings', doc.shortId, doc.originalUrl);
+            });
+
+            pipeline.expire(
+              'url_mappings',
+              this.configService.get('cache.ttl') * 1000,
+            );
+
+            await pipeline.exec();
+
+            result.successful.push(
+              ...insertedDocs.map((doc) => ({
+                shortId: doc.shortId,
+                originalUrl: doc.originalUrl,
+              })),
+            );
+          } catch (error) {
+            if (error.writeErrors) {
+              error.writeErrors.forEach((writeError: any) => {
+                result.failed.push({
+                  originalUrl: batch[writeError.index].originalUrl,
+                  error: writeError.errmsg,
+                });
+              });
+            } else {
+              batch.forEach((doc) => {
+                result.failed.push({
+                  originalUrl: doc.originalUrl,
+                  error: error.message,
+                });
+              });
+            }
+          }
+        }
+      }
+
+      return result;
+    } catch (error) {
+      console.error(`Error in createBulkShortUrls: ${error.message}`);
+      throw new BadRequestException(error.message);
     }
   }
 
@@ -126,61 +228,7 @@ export class UrlService {
     return null;
   }
 
-  async createBulkShortUrls(originalUrls: string[]): Promise<Url[]> {
-    const batchSize = this.configService.get('url.bulkBatchSize', 1000);
-    const results: Url[] = [];
-
-    try {
-      if (!Array.isArray(originalUrls)) {
-        throw new BadRequestException('Input must be an array of URLs');
-      }
-
-      if (originalUrls.length === 0) {
-        throw new BadRequestException('URL array cannot be empty');
-      }
-
-      const shortIdResults = (await this.generateUniqueShortIds(
-        originalUrls.length,
-      )) as string[];
-
-      const urlDocuments = originalUrls.map((url, index) => ({
-        shortId: shortIdResults[index],
-        originalUrl: url,
-        lastAccessed: new Date(),
-      }));
-
-      for (let i = 0; i < urlDocuments.length; i += batchSize) {
-        const batch = urlDocuments.slice(i, i + batchSize);
-        const insertedUrls = await this.urlModel.insertMany(batch, {
-          ordered: false,
-          rawResult: true,
-        });
-        results.push(...(insertedUrls.mongoose.results as unknown as Url[]));
-      }
-
-      for (let i = 0; i < urlDocuments.length; i += batchSize) {
-        const batch = urlDocuments.slice(i, i + batchSize);
-        await Promise.all(
-          batch.map((doc) =>
-            this.cacheManager.set(
-              `url:${doc.shortId}`,
-              doc.originalUrl,
-              this.configService.get('cache.ttl') * 1000,
-            ),
-          ),
-        );
-      }
-
-      return results;
-    } catch (error) {
-      console.error(`Error in createBulkShortUrls: ${error.message}`);
-      throw error;
-    }
-  }
-
-  private async generateUniqueShortIds(
-    count: number = 1,
-  ): Promise<string | string[]> {
+  private async generateUniqueShortIds(count: number): Promise<string[]> {
     const result: string[] = [];
 
     let attempts = 0;
@@ -213,7 +261,7 @@ export class UrlService {
       throw new Error('Could not generate enough unique short IDs');
     }
 
-    return result.length === 1 ? result[0] : result;
+    return result;
   }
 
   private generateShortId(length: number = 5): string {

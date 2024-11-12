@@ -1,7 +1,6 @@
 import { Controller, Get, Post, Param, Body, UseGuards } from '@nestjs/common';
-import { ThrottlerGuard } from '@nestjs/throttler';
 import { UrlService } from './url.service';
-import { CustomThrottle } from 'src/decorators/throttler.decorator';
+import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
 
 @Controller('url')
 @UseGuards(ThrottlerGuard)
@@ -9,19 +8,19 @@ export class UrlController {
   constructor(private readonly urlService: UrlService) {}
 
   @Get(':id')
-  @CustomThrottle(5, 60) // Allow 20 requests per minute
+  @Throttle({ default: { limit: 120, ttl: 60000 } }) // Allow 120 requests per minute
   async getOriginalUrl(@Param('id') id: string) {
     return await this.urlService.findOriginalUrl(id);
   }
 
   @Post()
-  @CustomThrottle(5, 60) // Allow 5 requests per minute
+  @Throttle({ default: { limit: 60, ttl: 60000 } }) // Allow 60 requests per minute
   async createShortUrl(@Body('url') url: string) {
     return await this.urlService.createShortUrl(url);
   }
 
   @Post('bulk')
-  @CustomThrottle(5, 60) // Allow 5 requests per minute
+  @Throttle({ default: { limit: 15, ttl: 60000 } }) // Allow 15 requests per minute
   async createBulkUrls(@Body('urls') urls: string[]) {
     return this.urlService.createBulkShortUrls(urls);
   }

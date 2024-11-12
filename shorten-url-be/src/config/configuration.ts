@@ -24,5 +24,6 @@ export default () => ({
   url: {
     maxGenerationAttempts:
       parseInt(process.env.MAX_GENERATION_ATTEMPTS, 10) || 5,
+    bulkBatchSize: parseInt(process.env.BULK_BATCH_SIZE, 10) || 1000,
   },
 });
