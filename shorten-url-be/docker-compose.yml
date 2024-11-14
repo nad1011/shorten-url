@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  api:
+    image: nad1011/shorten-url
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - MONGODB_URI=mongodb+srv://haidan10112003:2d3VnNJVup3rGlWR@url.clzke.mongodb.net/dev
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+      - CACHE_TTL=300
+      - THROTTLE_TTL=60
+      - THROTTLE_LIMIT=10
+      - MAX_GENERATION_ATTEMPTS=5 
+      - BULK_BATCH_SIZE=1000
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
