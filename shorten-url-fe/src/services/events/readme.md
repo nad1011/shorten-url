@@ -1,0 +1,1 @@
+Logic xử lý events
