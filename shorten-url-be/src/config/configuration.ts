@@ -22,6 +22,7 @@ export default () => ({
     limit: parseInt(process.env.THROTTLE_LIMIT, 10) || 10,
   },
   url: {
+    clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
     maxGenerationAttempts:
       parseInt(process.env.MAX_GENERATION_ATTEMPTS, 10) || 5,
     bulkBatchSize: parseInt(process.env.BULK_BATCH_SIZE, 10) || 1000,

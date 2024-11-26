@@ -13,6 +13,9 @@ import { ConfigService } from '@nestjs/config';
 import { RedisClientType } from 'redis';
 import { RedisStore } from 'cache-manager-redis-yet';
 import { BulkCreateResult } from './types';
+import { generateShortId } from './utils';
+import * as QRCode from 'qrcode';
+import { QRCodeErrorCorrectionLevel } from 'qrcode';
 
 @Injectable()
 export class UrlService {
@@ -25,6 +28,7 @@ export class UrlService {
     this.redisClient = (cacheManager.store as RedisStore).client;
   }
 
+  // Find original URL service
   async findOriginalUrl(shortId: string): Promise<string> {
     try {
       const cachedUrl = await this.redisClient.hGet('url_mappings', shortId);
@@ -63,29 +67,24 @@ export class UrlService {
     }
   }
 
-  private async updateLastAccessed(shortId: string): Promise<void> {
-    await this.urlModel.updateOne(
-      { shortId },
-      {
-        $set: { lastAccessed: new Date() },
-      },
-    );
-  }
-
+  // Create short URL service
   async createShortUrl(originalUrl: string): Promise<string> {
     try {
-      const existingIds = await this.findByOriginalUrl(originalUrl);
+      const existingIds = await this.findIdByOriginalUrl(originalUrl);
 
       if (existingIds) {
         return existingIds;
       }
 
-      const shortId = await this.generateUniqueShortIds(1)[0];
+      const shortId = await this.generateUniqueShortIds(1).then((res) =>
+        res.at(0),
+      );
 
       const url = new this.urlModel({
         shortId,
         originalUrl,
         lastAccessed: new Date(),
+        accessTimes: 0,
       });
 
       await url.save();
@@ -103,6 +102,7 @@ export class UrlService {
     }
   }
 
+  // Create bulk short URLs service
   async createBulkShortUrls(originalUrls: string[]): Promise<BulkCreateResult> {
     const batchSize = this.configService.get('url.bulkBatchSize', 1000);
     const result: BulkCreateResult = {
@@ -123,7 +123,7 @@ export class UrlService {
       const processedUrls = await Promise.all(
         originalUrls.map(async (url) => {
           try {
-            const existingId = await this.findByOriginalUrl(url);
+            const existingId = await this.findIdByOriginalUrl(url);
             if (existingId) {
               result.existing.push({
                 originalUrl: url,
@@ -210,7 +210,95 @@ export class UrlService {
     }
   }
 
-  private async findByOriginalUrl(originalUrl: string): Promise<string | null> {
+  // Generate QR code service
+  async createQrCode(originalUrl: string): Promise<string> {
+    try {
+      const existingIds = await this.findIdByOriginalUrl(originalUrl);
+
+      if (existingIds) {
+        return this.generateQrCodeSvg(existingIds);
+      }
+
+      const shortId = await this.generateUniqueShortIds(1).then((res) =>
+        res.at(0),
+      );
+      const qrCode = await this.generateQrCodeSvg(shortId);
+
+      const url = new this.urlModel({
+        shortId,
+        originalUrl,
+        lastAccessed: new Date(),
+        qrCode,
+        accessTimes: 0,
+      });
+
+      await url.save();
+
+      await this.redisClient
+        .multi()
+        .hSet('url_mappings', shortId, originalUrl)
+        .expire('url_mappings', this.configService.get('cache.ttl') * 1000)
+        .exec();
+
+      return qrCode;
+    } catch (error) {
+      console.error('Error in createQrCode:', error);
+      throw new Error('Error generating QR code');
+    }
+  }
+
+  // All the methods below are private methods
+  private async generateQrCodeSvg(shortId: string): Promise<string> {
+    try {
+      const cacheKey = `qr:${shortId}`;
+      const cachedQr = await this.cacheManager.get<string>(cacheKey);
+
+      if (cachedQr) {
+        console.debug(`Cache hit for QR code: ${shortId}`);
+        return cachedQr;
+      }
+
+      const fullUrl = `${this.configService.get('url.clientUrl')}/url/${shortId}`;
+
+      const qrOptions = {
+        type: 'svg' as const,
+        errorCorrectionLevel: 'H' as QRCodeErrorCorrectionLevel,
+        margin: 2,
+        width: 300,
+        color: {
+          dark: '#000000',
+          light: '#ffffff',
+        },
+      };
+
+      const qrCode = await QRCode.toString(fullUrl, qrOptions);
+
+      // Cache the generated QR code
+      await this.cacheManager.set(
+        cacheKey,
+        qrCode,
+        this.configService.get('cache.ttl') * 1000,
+      );
+
+      return qrCode;
+    } catch (error) {
+      console.error(`Error generating QR code for ${shortId}:`, error);
+      throw new Error('Failed to generate QR code');
+    }
+  }
+
+  private async updateLastAccessed(shortId: string): Promise<void> {
+    await this.urlModel.updateOne(
+      { shortId },
+      {
+        $set: { lastAccessed: new Date() },
+      },
+    );
+  }
+
+  private async findIdByOriginalUrl(
+    originalUrl: string,
+  ): Promise<string | null> {
     const allEntries = await this.redisClient.hGetAll('url_mappings');
 
     for (const [shortId, url] of Object.entries(allEntries)) {
@@ -240,7 +328,7 @@ export class UrlService {
 
       const newIds = Array(count - result.length)
         .fill(0)
-        .map(() => this.generateShortId());
+        .map(() => generateShortId());
 
       const existingIdsInDatabase = await this.urlModel
         .find({
@@ -261,17 +349,6 @@ export class UrlService {
       throw new Error('Could not generate enough unique short IDs');
     }
 
-    return result;
-  }
-
-  private generateShortId(length: number = 5): string {
-    const characters =
-      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let result = '';
-    const charactersLength = characters.length;
-    for (let i = 0; i < length; i++) {
-      result += characters.charAt(Math.floor(Math.random() * charactersLength));
-    }
     return result;
   }
 }

@@ -17,6 +17,12 @@ export class Url extends Document {
 
   @Prop({ default: Date.now })
   lastAccessed: Date;
+
+  @Prop({})
+  qrCode: string;
+
+  @Prop({})
+  accessTimes: number;
 }
 
 const UrlSchema = SchemaFactory.createForClass(Url);
