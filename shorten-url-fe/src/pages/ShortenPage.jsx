@@ -3,7 +3,7 @@ import * as Yup from "yup";
 
 import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
-import OutputLinkBox from "@/components/common/OutputLinkBox";
+import OutputLinkBox from "@/components/features/shortenUrl/OutputLinkBox";
 
 const ShortenPage = () => {
   const placeHolderText = "Enter a long URL to shorten";
