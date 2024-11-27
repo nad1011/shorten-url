@@ -4,8 +4,17 @@ import createApiInstance from "@/lib/api";
 const api = createApiInstance(API_ENDPOINTS.BASE_URL);
 
 export const urlService = {
-  create: (url) => api.post(API_ENDPOINTS.URL.CREATE, { url }),
-  bulkCreate: (urls) => api.post(API_ENDPOINTS.URL.BULK_CREATE, { urls }),
-  getAll: () => api.get(API_ENDPOINTS.URL.GET_ALL),
-  getOne: (id) => api.get(API_ENDPOINTS.URL.GET_ONE(id)),
+  create: async (url) => {
+    const response = await api.post(API_ENDPOINTS.URL.CREATE, { url });
+    return response.data;
+  },
+  // bulkCreate: (urls) => api.post(API_ENDPOINTS.URL.BULK_CREATE, { urls }),
+  generateQr: async (url) => {
+    const response = await api.post(API_ENDPOINTS.QR.GENERATE, { url });
+    return response.data;
+  },
+  get: async (shortId) => {
+    const response = await api.get(API_ENDPOINTS.URL.GET(shortId));
+    return response.data;
+  },
 };

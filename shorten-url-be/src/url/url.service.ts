@@ -12,7 +12,7 @@ import { Url } from './schemas/url.schema';
 import { ConfigService } from '@nestjs/config';
 import { RedisClientType } from 'redis';
 import { RedisStore } from 'cache-manager-redis-yet';
-import { BulkCreateResult } from './types';
+import { BulkCreateResult, Result } from './types';
 import { generateShortId } from './utils';
 import * as QRCode from 'qrcode';
 import { QRCodeErrorCorrectionLevel } from 'qrcode';
@@ -29,14 +29,20 @@ export class UrlService {
   }
 
   // Find original URL service
-  async findOriginalUrl(shortId: string): Promise<string> {
+  async findOriginalUrl(shortId: string): Promise<Result> {
     try {
       const cachedUrl = await this.redisClient.hGet('url_mappings', shortId);
       if (cachedUrl) {
         this.updateLastAccessed(shortId).catch((err) =>
           console.error('Error updating visit count:', err),
         );
-        return cachedUrl;
+        return {
+          data: {
+            shortId,
+            originalUrl: cachedUrl,
+          },
+          error: null,
+        };
       }
 
       const url = await this.urlModel.findOne({ shortId });
@@ -57,7 +63,14 @@ export class UrlService {
         .expire('url_mappings', this.configService.get('cache.ttl') * 1000)
         .exec();
 
-      return url.originalUrl;
+      return {
+        data: {
+          shortId,
+          originalUrl: url.originalUrl,
+          qrCode: url.qrCode,
+        },
+        error: null,
+      };
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
@@ -68,12 +81,18 @@ export class UrlService {
   }
 
   // Create short URL service
-  async createShortUrl(originalUrl: string): Promise<string> {
+  async createShortUrl(originalUrl: string): Promise<Result> {
     try {
       const existingIds = await this.findIdByOriginalUrl(originalUrl);
 
       if (existingIds) {
-        return existingIds;
+        return {
+          data: {
+            shortId: existingIds,
+            originalUrl,
+          },
+          error: null,
+        };
       }
 
       const shortId = await this.generateUniqueShortIds(1).then((res) =>
@@ -95,7 +114,13 @@ export class UrlService {
         .expire('url_mappings', this.configService.get('cache.ttl') * 1000)
         .exec();
 
-      return url.shortId;
+      return {
+        data: {
+          shortId,
+          originalUrl,
+        },
+        error: null,
+      };
     } catch (error) {
       console.error('Error in createShortUrl:', error);
       throw new Error('Error creating short URL');
@@ -103,7 +128,7 @@ export class UrlService {
   }
 
   // Create bulk short URLs service
-  async createBulkShortUrls(originalUrls: string[]): Promise<BulkCreateResult> {
+  async createBulkShortUrls(originalUrls: string[]): Promise<Result> {
     const batchSize = this.configService.get('url.bulkBatchSize', 1000);
     const result: BulkCreateResult = {
       successful: [],
@@ -203,7 +228,10 @@ export class UrlService {
         }
       }
 
-      return result;
+      return {
+        data: result,
+        error: null,
+      };
     } catch (error) {
       console.error(`Error in createBulkShortUrls: ${error.message}`);
       throw new BadRequestException(error.message);
@@ -211,12 +239,19 @@ export class UrlService {
   }
 
   // Generate QR code service
-  async createQrCode(originalUrl: string): Promise<string> {
+  async createQrCode(originalUrl: string): Promise<Result> {
     try {
       const existingIds = await this.findIdByOriginalUrl(originalUrl);
 
       if (existingIds) {
-        return this.generateQrCodeSvg(existingIds);
+        return {
+          data: {
+            shortId: existingIds,
+            originalUrl,
+            qrCode: await this.generateQrCodeSvg(existingIds),
+          },
+          error: null,
+        };
       }
 
       const shortId = await this.generateUniqueShortIds(1).then((res) =>
@@ -240,7 +275,14 @@ export class UrlService {
         .expire('url_mappings', this.configService.get('cache.ttl') * 1000)
         .exec();
 
-      return qrCode;
+      return {
+        data: {
+          shortId,
+          originalUrl,
+          qrCode,
+        },
+        error: null,
+      };
     } catch (error) {
       console.error('Error in createQrCode:', error);
       throw new Error('Error generating QR code');

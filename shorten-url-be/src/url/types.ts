@@ -12,3 +12,14 @@ export interface BulkCreateResult {
     shortId: string;
   }>;
 }
+
+export interface Result {
+  data:
+    | {
+        shortId: string;
+        originalUrl: string;
+        qrCode?: string;
+      }
+    | BulkCreateResult;
+  error: string | null;
+}
