@@ -1,6 +1,7 @@
 import { Provider } from "react-redux";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
+import SettingsPage from "./pages/SettingsPage";
 import ShortenPage from "./pages/ShortenPage";
 
 import MainLayout from "@/components/layout/MainLayout";
@@ -23,7 +24,7 @@ const App = () => {
               <Route path="/" element={<ShortenPage />} />
               <Route path="/qr" element={<QrPage />} />
               <Route path="/analytics" element={<h1>hello analytics</h1>} />
-              <Route path="/settings" element={<h1>hello settings</h1>} />
+              <Route path="/settings" element={<SettingsPage />} />
             </Routes>
           </MainLayout>
         </ToastProvider>
