@@ -306,7 +306,6 @@ export class UrlService {
         type: 'svg' as const,
         errorCorrectionLevel: 'H' as QRCodeErrorCorrectionLevel,
         margin: 2,
-        width: 300,
         color: {
           dark: '#000000',
           light: '#ffffff',

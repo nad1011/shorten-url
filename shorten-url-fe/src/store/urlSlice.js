@@ -31,6 +31,14 @@ export const generateQrCode = createAsyncThunk("url/qr", async (url) => {
   };
 });
 
+export const fetchUrls = createAsyncThunk("url/fetch", async (user) => {
+  const response = urlService.fetch(user.id);
+  if (response.error) {
+    throw new Error(response.error);
+  }
+  return response.data;
+});
+
 const urlSlice = createSlice({
   name: "url",
   initialState: {
@@ -38,9 +46,26 @@ const urlSlice = createSlice({
     loading: false,
     error: null,
   },
-  reducers: {},
+  reducers: {
+    clearItems: (state) => {
+      state.items = [];
+    },
+  },
   extraReducers: (builder) => {
     builder
+      // Fetch URLs
+      .addCase(fetchUrls.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchUrls.fulfilled, (state, action) => {
+        state.items = action.payload;
+        state.loading = false;
+      })
+      .addCase(fetchUrls.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message;
+      })
       // Create Short URL
       .addCase(createShortUrl.pending, (state) => {
         state.loading = true;
@@ -70,4 +95,5 @@ const urlSlice = createSlice({
   },
 });
 
+export const { clearItems } = urlSlice.actions;
 export default urlSlice.reducer;

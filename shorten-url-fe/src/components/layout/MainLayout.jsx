@@ -11,7 +11,7 @@ const MainLayout = ({ children }) => {
       <div className="flex-1 flex">
         <Sidebar />
         <main className="flex-1 overflow-auto p-6">
-          <div className="mx-auto max-w-7xl">{children}</div>
+          <div className="w-full h-full">{children}</div>
         </main>
       </div>
       <Footer />

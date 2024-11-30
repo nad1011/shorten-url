@@ -1,23 +1,41 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import Button from "@/components/common/Button";
 import Icon from "@/components/common/Icon";
+import Input from "@/components/common/Input";
 import useToast from "@/hooks/useToast";
-import { generateQrCode } from "@/store/urlSlice";
+import { generateQrCode, fetchUrls } from "@/store/urlSlice";
+import { validateUrl } from "@/utils";
 
 const QrPage = () => {
   const dispatch = useDispatch();
   const { showToast } = useToast();
   const { items, loading } = useSelector((state) => state.url);
+  const { user } = useSelector((state) => state.auth);
   const [url, setUrl] = useState("");
-  const [selectedItem, setSelectedItem] = useState(null);
+  const [error, setError] = useState("");
 
-  const qrItems = items.filter((item) => item.qrCode);
+  useEffect(() => {
+    async function fetchData() {
+      if (user) {
+        await dispatch(fetchUrls(user));
+      }
+    }
+    fetchData();
+  }, [user, dispatch]);
+
+  const generatedQr = items.filter((item) => item.qrCode).at(0);
 
   const handleCreateQR = async (e) => {
     e.preventDefault();
-    if (!url) return;
+
+    setError("");
+    const validationResult = await validateUrl(url);
+    if (typeof validationResult === "string") {
+      setError(validationResult);
+      return;
+    }
 
     try {
       await dispatch(generateQrCode(url)).unwrap();
@@ -28,13 +46,15 @@ const QrPage = () => {
     }
   };
 
-  const handleDownload = (item) => {
-    const svgContent = item.qrCode;
+  const handleDownload = () => {
+    if (!generatedQr) return;
+
+    const svgContent = generatedQr.qrCode;
     const blob = new Blob([svgContent], { type: "image/svg+xml" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `qr-${item.shortId}.svg`;
+    a.download = "qr-code.svg";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -42,147 +62,67 @@ const QrPage = () => {
   };
 
   return (
-    <div className="space-y-6 p-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">QR Code Generator</h1>
-        <p className="text-sm text-muted-foreground">
-          Create QR codes with shortened URLs
-        </p>
-      </div>
+    <div className="h-full flex flex-col items-center justify-center">
+      <div className="w-full max-w-lg space-y-8">
+        {/* Header */}
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">QR Code Generator</h1>
+        </div>
 
-      {/* Create QR Form */}
-      <form onSubmit={handleCreateQR} className="space-y-4">
-        <div className="flex gap-4">
-          <input
-            type="url"
+        {/* Input Form */}
+        <form onSubmit={handleCreateQR} className="space-y-4">
+          <Input
             value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="Enter URL to generate QR code"
-            className="flex-1 rounded-md border border-input bg-background px-4 py-2"
-            required
+            onChange={(e) => {
+              setUrl(e.target.value);
+              setError("");
+            }}
+            placeholder="Enter a URL to generate QR code"
+            error={error}
           />
-          <Button type="submit" disabled={loading}>
+
+          <Button type="submit" disabled={loading} className="w-full">
             {loading ? (
-              <Icon name="Loader2" className="mr-2 h-4 w-4 animate-spin" />
+              <Icon name="Loader2" className="mr-2 h-5 w-5 animate-spin" />
             ) : (
-              <Icon name="QrCode" className="mr-2 h-4 w-4" />
+              "Generate QR Code"
             )}
-            Generate QR
           </Button>
-        </div>
-      </form>
 
-      {/* QR Codes Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {qrItems.map((item) => (
-          <div
-            key={item.shortId}
-            className="rounded-lg border bg-card p-4 shadow-sm"
-          >
-            <div className="space-y-4">
-              {/* QR Preview */}
-              <div className="flex justify-center p-4 bg-white rounded-md">
-                <div
-                  dangerouslySetInnerHTML={{ __html: item.qrCode }}
-                  className="w-32 h-32"
-                />
-              </div>
-
-              {/* URL Info */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">Short URL</span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setSelectedItem(item)}
-                  >
-                    <Icon name="ExternalLink" size={16} />
-                  </Button>
-                </div>
-                <code className="block text-sm bg-muted p-2 rounded">
-                  {`${window.location.origin}/${item.shortId}`}
-                </code>
-              </div>
-
-              {/* Actions */}
-              <div className="flex justify-between">
-                <div className="text-sm text-muted-foreground">
-                  Accessed: {item.accessTimes} times
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDownload(item)}
-                >
-                  <Icon name="Download" size={16} className="mr-2" />
-                  Download
-                </Button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Empty State */}
-      {qrItems.length === 0 && !loading && (
-        <div className="text-center py-12">
-          <Icon
-            name="QrCode"
-            size={48}
-            className="mx-auto text-muted-foreground mb-4"
-          />
-          <p className="text-muted-foreground">
-            No QR codes yet. Generate one using the form above.
+          <p className="text-sm text-muted-foreground text-center">
+            Example: https://www.google.com
           </p>
-        </div>
-      )}
+        </form>
 
-      {/* URL Details Modal */}
-      {selectedItem && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-card rounded-lg shadow-lg p-6 max-w-md w-full space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold">URL Details</h3>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setSelectedItem(null)}
-              >
-                <Icon name="X" size={18} />
-              </Button>
+        {/* Output Section */}
+        {generatedQr && (
+          <div className="flex flex-col items-center space-y-4 pt-4">
+            <h2 className="text-xl font-semibold text-gray-700">
+              Your QR Code
+            </h2>
+
+            <div className="bg-white p-4 rounded-2xl shadow-md">
+              <div
+                dangerouslySetInnerHTML={{ __html: generatedQr.qrCode }}
+                style={{
+                  width: "200px",
+                  height: "200px",
+                }}
+                className="mx-auto"
+              />
             </div>
-            <div className="space-y-4">
-              <div>
-                <div className="text-sm font-medium mb-1">Original URL</div>
-                <div className="text-sm text-muted-foreground break-all">
-                  {selectedItem.originalUrl}
-                </div>
-              </div>
-              <div>
-                <div className="text-sm font-medium mb-1">Short URL</div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={`${window.location.origin}/${selectedItem.shortId}`}
-                    readOnly
-                    className="flex-1 rounded-md border border-input bg-muted px-3 py-2 text-sm"
-                  />
-                  <Button variant="outline" size="icon">
-                    <Icon name="Copy" size={18} />
-                  </Button>
-                </div>
-              </div>
-              <div>
-                <div className="text-sm font-medium mb-1">Statistics</div>
-                <div className="text-sm text-muted-foreground">
-                  Accessed {selectedItem.accessTimes} times
-                </div>
-              </div>
-            </div>
+
+            <Button
+              variant="outline"
+              onClick={handleDownload}
+              className="h-11 px-6 rounded-xl flex items-center gap-2 border-2"
+            >
+              <Icon name="Download" size={18} />
+              Download QR Code
+            </Button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

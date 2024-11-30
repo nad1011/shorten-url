@@ -5,7 +5,7 @@ import Icon from "@/components/common/Icon";
 import { cn } from "@/lib/utils";
 
 const toastVariants = cva(
-  "fixed top-4 right-4 z-10 pointer-events-auto items-center justify-between overflow-hidden rounded-md border shadow-lg transition-all animate-in fade-in slide-in-from-top-5 duration-300",
+  "fixed bottom-4 right-4 z-10 pointer-events-auto items-center justify-between overflow-hidden rounded-md border shadow-lg transition-all animate-in fade-in slide-in-from-top-5 duration-300",
   {
     variants: {
       type: {
