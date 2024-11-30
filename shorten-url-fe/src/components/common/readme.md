@@ -1,1 +1,0 @@
-Components có thể tái sử dụng trên toàn ứng dụng (buttons, inputs, modals)

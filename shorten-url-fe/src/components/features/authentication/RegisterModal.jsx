@@ -1,3 +1,5 @@
+import PropTypes from "prop-types";
+
 import BaseForm from "./BaseForm";
 import FieldWrapper from "./FieldWrapper";
 import FormFooter from "./FormFooter";
@@ -5,13 +7,13 @@ import FormHeader from "./FormHeader";
 
 import Button from "@/components/common/Button";
 
-const LoginModal = () => {
+const RegisterModal = ({ toggleAuthMode }) => {
   return (
     <div>
       <BaseForm action="">
         <FormHeader
-          formTitle={"Login"}
-          formDescription={"Introduce your information to sign in."}
+          formTitle={"Create an account"}
+          formDescription={"Introduce your information to sign up."}
         />
 
         {/*Form fields*/}
@@ -28,18 +30,29 @@ const LoginModal = () => {
             minLength="8"
             placeholder="********"
           />
+
+          <FieldWrapper
+            labelName={"Confirm password"}
+            type="password"
+            minLength="8"
+            placeholder="********"
+          />
         </div>
 
         {/*Form submit button*/}
-        <Button className="w-full">Login</Button>
+        <Button className="w-full">Sign up</Button>
 
         <FormFooter
-          message={"Don't have an account? "}
-          linkText={"Register now"}
+          message={"Have an account already? "}
+          linkText={"Login now"}
+          onClick={toggleAuthMode}
         />
       </BaseForm>
     </div>
   );
 };
+RegisterModal.propTypes = {
+  toggleAuthMode: PropTypes.func.isRequired,
+};
 
-export default LoginModal;
+export default RegisterModal;

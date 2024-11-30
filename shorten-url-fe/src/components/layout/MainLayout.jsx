@@ -4,9 +4,12 @@ import Footer from "./Footer";
 import Headers from "./Header";
 import Sidebar from "./Sidebar";
 
+import AuthModal from "@/components/features/authentication";
+
 const MainLayout = ({ children }) => {
   return (
     <div className="flex min-h-screen flex-col bg-background">
+      <AuthModal />
       <Headers />
       <div className="flex-1 flex">
         <Sidebar />

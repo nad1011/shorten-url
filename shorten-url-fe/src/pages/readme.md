@@ -1,1 +1,0 @@
-Components tương ứng từng trang, tương ứng với các routes

@@ -1,7 +1,10 @@
 import Button from "@/components/common/Button";
 import Icon from "@/components/common/Icon";
+import useAuth from "@/hooks/useAuth";
 
 const Header = () => {
+  const { openLoginModal, openRegisterModal } = useAuth();
+
   return (
     <nav className="border-b bg-background flex items-center justify-between px-5 py-3">
       <div className="flex items-center gap-2">
@@ -11,11 +14,11 @@ const Header = () => {
         </h2>
       </div>
       <div className="flex items-center gap-4">
-        <Button variant="default" size="default">
-          Sign Up
-        </Button>
-        <Button variant="secondary" size="default">
+        <Button variant="default" size="default" onClick={openLoginModal}>
           Sign In
+        </Button>
+        <Button variant="secondary" size="default" onClick={openRegisterModal}>
+          Sign Up
         </Button>
       </div>
     </nav>
