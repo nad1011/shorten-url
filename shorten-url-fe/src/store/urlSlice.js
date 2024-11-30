@@ -7,7 +7,11 @@ export const createShortUrl = createAsyncThunk("url/create", async (url) => {
   if (response.error) {
     throw new Error(response.error);
   }
-  return response;
+  return {
+    originalUrl: response.data.originalUrl,
+    shortId: response.data.shortId,
+    qrCode: null,
+  };
 });
 
 export const createBulkUrls = createAsyncThunk(

@@ -1,123 +1,120 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import * as Yup from "yup";
 
 import Button from "@/components/common/Button";
 import Icon from "@/components/common/Icon";
+import Input from "@/components/common/Input";
+// import OutputLinkBox from "@/components/features/shortenUrl/OutputLinkBox";
 import useToast from "@/hooks/useToast";
-import { generateQrCode } from "@/store/urlSlice";
+import { createShortUrl } from "@/store/urlSlice";
 
-const QrPage = () => {
+const ShortenPage = () => {
   const dispatch = useDispatch();
   const { showToast } = useToast();
   const { items, loading } = useSelector((state) => state.url);
   const [url, setUrl] = useState("");
   const [selectedItem, setSelectedItem] = useState(null);
 
-  const qrItems = items.filter((item) => item.qrCode);
+  const shortenedUrls = items.filter((item) => !item.qrCode);
 
-  const handleCreateQR = async (e) => {
+  const schema = Yup.string().url("Invalid URL").required("URL is required");
+
+  const handleCreateShortUrl = async (e) => {
     e.preventDefault();
-    if (!url) return;
 
     try {
-      await dispatch(generateQrCode(url)).unwrap();
+      const isValid = await schema.validate(url);
+      if (!isValid) return;
+
+      await dispatch(createShortUrl(url)).unwrap();
       setUrl("");
-      showToast("QR Code created successfully", "success");
+      showToast("URL shortened successfully", "success");
     } catch (error) {
       showToast(error.message, "error");
     }
   };
 
-  const handleDownload = (item) => {
-    const svgContent = item.qrCode;
-    const blob = new Blob([svgContent], { type: "image/svg+xml" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `qr-${item.shortId}.svg`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  const handleCopy = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast("Copied to clipboard!", "success");
+    } catch (error) {
+      showToast("Failed to copy", error);
+    }
   };
 
   return (
     <div className="space-y-6 p-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">QR Code Generator</h1>
+        <h1 className="text-2xl font-bold tracking-tight">URL Shortener</h1>
         <p className="text-sm text-muted-foreground">
-          Create QR codes with shortened URLs
+          Create short and memorable links
         </p>
       </div>
-
-      {/* Create QR Form */}
-      <form onSubmit={handleCreateQR} className="space-y-4">
+      {/* Create Short URL Form */}
+      <form onSubmit={handleCreateShortUrl} className="space-y-4">
         <div className="flex gap-4">
-          <input
+          <Input
             type="url"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            placeholder="Enter URL to generate QR code"
-            className="flex-1 rounded-md border border-input bg-background px-4 py-2"
+            placeholder="Enter a long URL to shorten"
             required
+            className="flex-1"
           />
           <Button type="submit" disabled={loading}>
             {loading ? (
               <Icon name="Loader2" className="mr-2 h-4 w-4 animate-spin" />
             ) : (
-              <Icon name="QrCode" className="mr-2 h-4 w-4" />
+              <Icon name="Link" className="mr-2 h-4 w-4" />
             )}
-            Generate QR
+            Shorten URL
           </Button>
         </div>
+        <p className="text-sm text-muted-foreground">
+          Example: https://www.google.com
+        </p>
       </form>
 
-      {/* QR Codes Grid */}
+      {/* URLs Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {qrItems.map((item) => (
+        {shortenedUrls.map((item) => (
           <div
             key={item.shortId}
             className="rounded-lg border bg-card p-4 shadow-sm"
           >
-            <div className="space-y-4">
-              {/* QR Preview */}
-              <div className="flex justify-center p-4 bg-white rounded-md">
-                <div
-                  dangerouslySetInnerHTML={{ __html: item.qrCode }}
-                  className="w-32 h-32"
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="font-medium">Shortened URL</div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSelectedItem(item)}
+                >
+                  <Icon name="ExternalLink" size={16} />
+                </Button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Input
+                  readOnly
+                  value={`${window.location.origin}/${item.shortId}`}
+                  className="text-sm bg-muted"
                 />
-              </div>
-
-              {/* URL Info */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">Short URL</span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setSelectedItem(item)}
-                  >
-                    <Icon name="ExternalLink" size={16} />
-                  </Button>
-                </div>
-                <code className="block text-sm bg-muted p-2 rounded">
-                  {`${window.location.origin}/${item.shortId}`}
-                </code>
-              </div>
-
-              {/* Actions */}
-              <div className="flex justify-between">
-                <div className="text-sm text-muted-foreground">
-                  Accessed: {item.accessTimes} times
-                </div>
                 <Button
                   variant="outline"
-                  size="sm"
-                  onClick={() => handleDownload(item)}
+                  size="icon"
+                  onClick={() =>
+                    handleCopy(`${window.location.origin}/${item.shortId}`)
+                  }
                 >
-                  <Icon name="Download" size={16} className="mr-2" />
-                  Download
+                  <Icon name="Copy" size={16} />
                 </Button>
+              </div>
+
+              <div className="flex justify-between items-center text-sm text-muted-foreground">
+                <span>Accessed: {item.accessTimes} times</span>
               </div>
             </div>
           </div>
@@ -125,15 +122,15 @@ const QrPage = () => {
       </div>
 
       {/* Empty State */}
-      {qrItems.length === 0 && !loading && (
+      {shortenedUrls.length === 0 && !loading && (
         <div className="text-center py-12">
           <Icon
-            name="QrCode"
+            name="Link"
             size={48}
             className="mx-auto text-muted-foreground mb-4"
           />
           <p className="text-muted-foreground">
-            No QR codes yet. Generate one using the form above.
+            No shortened URLs yet. Create one using the form above.
           </p>
         </div>
       )}
@@ -162,13 +159,20 @@ const QrPage = () => {
               <div>
                 <div className="text-sm font-medium mb-1">Short URL</div>
                 <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={`${window.location.origin}/${selectedItem.shortId}`}
+                  <Input
                     readOnly
-                    className="flex-1 rounded-md border border-input bg-muted px-3 py-2 text-sm"
+                    value={`${window.location.origin}/${selectedItem.shortId}`}
+                    className="bg-muted"
                   />
-                  <Button variant="outline" size="icon">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() =>
+                      handleCopy(
+                        `${window.location.origin}/${selectedItem.shortId}`
+                      )
+                    }
+                  >
                     <Icon name="Copy" size={18} />
                   </Button>
                 </div>
@@ -187,4 +191,4 @@ const QrPage = () => {
   );
 };
 
-export default QrPage;
+export default ShortenPage;
