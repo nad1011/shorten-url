@@ -1,13 +1,28 @@
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 
 import Avatar from "@/components/common/Avatar";
 import Button from "@/components/common/Button";
 import Icon from "@/components/common/Icon";
 import useAuth from "@/hooks/useAuth";
+import useToast from "@/hooks/useToast";
+import { logOut } from "@/store/authSlice";
 
 const Header = () => {
+  const dispatch = useDispatch();
+  const { showToast } = useToast();
+
   const { openLoginModal, openRegisterModal } = useAuth();
   const user = useSelector((state) => state.auth.user);
+
+  const handleLogOut = () => {
+    try {
+      dispatch(logOut());
+      showToast("Logged out successfully", "success");
+    } catch (error) {
+      console.error(error);
+      showToast(error, "error");
+    }
+  };
 
   return (
     <nav className="border-b bg-background flex items-center justify-between px-5 py-3">
@@ -19,7 +34,7 @@ const Header = () => {
       </div>
       {user ? (
         <div className="flex items-center gap-4">
-          <Button variant="secondary" size="default" onClick={() => {}}>
+          <Button variant="secondary" size="default" onClick={handleLogOut}>
             Log Out
           </Button>
           <Avatar src={user.avatar} alt={user.username} />

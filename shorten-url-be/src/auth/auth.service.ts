@@ -28,8 +28,6 @@ export class AuthService {
   async register(registerDto: RegisterDto): Promise<AuthResponse> {
     const { email, password, username } = registerDto;
 
-    console.log('registerDto', registerDto);
-
     const existingUser = await this.userModel.findOne({ email });
     if (existingUser) {
       throw new BadRequestException('Email already registered');

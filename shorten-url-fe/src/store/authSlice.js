@@ -2,6 +2,16 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 
 import { authService } from "@/services/api/authApi";
 
+const loadUserFromStorage = () => {
+  try {
+    const user = localStorage.getItem("user");
+    return user ? JSON.parse(user) : null;
+  } catch (error) {
+    console.error("Failed to load user from storage", error);
+    return null;
+  }
+};
+
 export const loginUser = createAsyncThunk(
   "auth/login",
   async (credentials, { rejectWithValue }) => {
@@ -11,6 +21,7 @@ export const loginUser = createAsyncThunk(
         return rejectWithValue(response.error);
       }
       localStorage.setItem("token", response.accessToken);
+      localStorage.setItem("user", JSON.stringify(response.user));
       return {
         accessToken: response.accessToken,
         user: response.user,
@@ -30,6 +41,7 @@ export const registerUser = createAsyncThunk(
         return rejectWithValue(response.error);
       }
       localStorage.setItem("token", response.accessToken);
+      localStorage.setItem("user", JSON.stringify(response.user));
       return {
         accessToken: response.accessToken,
         user: response.user,
@@ -60,17 +72,18 @@ export const fetchProfile = createAsyncThunk(
 const authSlice = createSlice({
   name: "auth",
   initialState: {
-    user: null,
+    user: loadUserFromStorage(),
     token: localStorage.getItem("token"),
     loading: false,
     error: null,
   },
   reducers: {
-    logout: (state) => {
+    logOut: (state) => {
       state.user = null;
       state.token = null;
       state.error = null;
       localStorage.removeItem("token");
+      localStorage.removeItem("user");
     },
     clearError: (state) => {
       state.error = null;
@@ -130,5 +143,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { logout, clearError } = authSlice.actions;
+export const { logOut, clearError } = authSlice.actions;
 export default authSlice.reducer;

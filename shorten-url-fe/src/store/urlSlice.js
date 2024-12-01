@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 
 import { urlService } from "@/services/api/urlApi";
 
-export const createShortUrl = createAsyncThunk("url/create", async (url) => {
+export const createShortUrl = createAsyncThunk("url", async (url) => {
   const response = await urlService.create(url);
   if (response.error) {
     throw new Error(response.error);

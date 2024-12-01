@@ -12,6 +12,7 @@ import FormHeader from "./FormHeader";
 import Button from "@/components/common/Button";
 import useToast from "@/hooks/useToast";
 import { loginUser } from "@/store/authSlice";
+import { clearItems } from "@/store/urlSlice";
 
 const loginSchema = yup.object().shape({
   email: yup
@@ -41,8 +42,9 @@ const LoginModal = ({ toggleAuthMode }) => {
     try {
       await dispatch(loginUser(data)).unwrap();
       showToast("Logged in successfully", "success");
+      dispatch(clearItems());
     } catch (error) {
-      console.log(error);
+      console.error(error);
       showToast(error, "error");
     }
   };

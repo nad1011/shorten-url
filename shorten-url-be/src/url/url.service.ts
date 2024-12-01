@@ -67,7 +67,6 @@ export class UrlService {
         data: {
           shortId,
           originalUrl: url.originalUrl,
-          qrCode: url.qrCode,
         },
         error: null,
       };

@@ -12,6 +12,7 @@ import FormHeader from "./FormHeader";
 import Button from "@/components/common/Button";
 import useToast from "@/hooks/useToast";
 import { registerUser } from "@/store/authSlice";
+import { clearItems } from "@/store/urlSlice";
 
 const registerSchema = yup.object().shape({
   email: yup
@@ -46,6 +47,7 @@ const RegisterModal = ({ toggleAuthMode }) => {
     try {
       await dispatch(registerUser(data)).unwrap();
       showToast("Signed up successfully", "success");
+      dispatch(clearItems());
     } catch (error) {
       showToast(error, "error");
     }
