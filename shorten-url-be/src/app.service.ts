@@ -25,7 +25,7 @@ export class AppService {
         cache: await this.checkRedisHealth(),
       },
       uptime: process.uptime(),
-      environment: this.configService.get('NODE_ENV', 'development'),
+      environment: this.configService.get('app.env'),
     };
 
     if (!status.services.database || !status.services.cache) {
@@ -70,9 +70,9 @@ export class AppService {
   getAppInfo() {
     return {
       name: 'URL Shortener API',
-      version: this.configService.get('app.version', '1.0.0'),
+      version: this.configService.get('app.version'),
       description: 'URL shortening service',
-      environment: this.configService.get('NODE_ENV', 'development'),
+      environment: this.configService.get('app.env'),
       endpoints: {
         health: '/health',
         createUrl: '/url',

@@ -24,9 +24,9 @@ const Avatar = ({ src, alt, size = "default", className }) => {
           className="aspect-square h-full w-full object-cover"
         />
       ) : (
-        <div className="flex h-full w-full items-center justify-center bg-muted">
-          <span className="text-sm font-medium text-muted-foreground">
-            {alt?.charAt(0)?.toUpperCase() || "U"}
+        <div className="flex h-full w-full items-center justify-center bg-secondary">
+          <span className="text-sm font-medium text-secondary-foreground">
+            {alt?.charAt(0)?.toUpperCase() || "A"}
           </span>
         </div>
       )}

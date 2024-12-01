@@ -8,16 +8,16 @@ export const createShortUrl = createAsyncThunk("url/create", async (url) => {
     throw new Error(response.error);
   }
   return {
-    originalUrl: response.data.originalUrl,
-    shortId: response.data.shortId,
+    originalUrl: response.originalUrl,
+    shortId: response.shortId,
     qrCode: null,
   };
 });
 
-export const createBulkUrls = createAsyncThunk(
-  "url/bulkCreate",
-  async (urls) => await urlService.bulkCreate(urls)
-);
+// export const createBulkUrls = createAsyncThunk(
+//   "url/bulkCreate",
+//   async (urls) => await urlService.bulkCreate(urls)
+// );
 
 export const generateQrCode = createAsyncThunk("url/qr", async (url) => {
   const response = await urlService.generateQr(url);
@@ -25,9 +25,9 @@ export const generateQrCode = createAsyncThunk("url/qr", async (url) => {
     throw new Error(response.error);
   }
   return {
-    originalUrl: response.data.originalUrl,
-    shortId: response.data.shortId,
-    qrCode: response.data.qrCode,
+    originalUrl: response.originalUrl,
+    shortId: response.shortId,
+    qrCode: response.qrCode,
   };
 });
 

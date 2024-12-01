@@ -3,7 +3,7 @@ export default () => ({
     name: 'URL Shortener API',
     version: '1.0.0',
     description: 'URL shortening service',
-    environment: process.env.NODE_ENV || 'development',
+    env: process.env.NODE_ENV || 'development',
   },
   port: parseInt(process.env.PORT, 10) || 3000,
   database: {
@@ -26,5 +26,9 @@ export default () => ({
     maxGenerationAttempts:
       parseInt(process.env.MAX_GENERATION_ATTEMPTS, 10) || 5,
     bulkBatchSize: parseInt(process.env.BULK_BATCH_SIZE, 10) || 1000,
+  },
+  jwt: {
+    secret: process.env.JWT_SECRET,
+    expiresIn: process.env.JWT_EXPIRES_IN || '24h',
   },
 });

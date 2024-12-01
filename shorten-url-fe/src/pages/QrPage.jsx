@@ -70,7 +70,7 @@ const QrPage = () => {
         </div>
 
         {/* Input Form */}
-        <form onSubmit={handleCreateQR} className="space-y-4">
+        <form onSubmit={handleCreateQR} className="space-y-6" noValidate>
           <Input
             value={url}
             onChange={(e) => {

@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Schema as MongooseSchema } from 'mongoose';
 
 @Schema({
   timestamps: true,
@@ -23,11 +23,14 @@ export class Url extends Document {
 
   @Prop({})
   accessTimes: number;
+
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', default: null })
+  userId: MongooseSchema.Types.ObjectId;
 }
 
 const UrlSchema = SchemaFactory.createForClass(Url);
 
-UrlSchema.index({ createdBy: 1, isPrivate: 1 });
-UrlSchema.index({ shortId: 1, createdBy: 1 });
+UrlSchema.index({ userId: 1 });
+UrlSchema.index({ shortId: 1, userId: 1 });
 
 export { UrlSchema };
