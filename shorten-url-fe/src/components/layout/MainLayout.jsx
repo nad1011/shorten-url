@@ -13,7 +13,7 @@ const MainLayout = ({ children }) => {
       <Headers />
       <div className="flex-1 flex overflow-hidden">
         <Sidebar />
-        <main className="flex-1 overflow-y-auto my-auto">{children}</main>
+        <main className="flex-1 overflow-y-auto">{children}</main>
       </div>
       <Footer />
     </div>

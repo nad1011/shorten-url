@@ -62,7 +62,7 @@ const ShortenPage = () => {
   };
 
   return (
-    <div className="mx-auto max-w-xl w-full flex flex-col gap-4">
+    <div className="mx-auto max-w-xl w-full flex flex-col gap-4 py-6">
       {/* Header */}
       <div className="text-center w-full">
         <h1 className="text-2xl font-bold">URL Shortener</h1>
