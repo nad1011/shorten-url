@@ -1,98 +1,90 @@
+### **Báo cáo đánh giá hiệu năng của hai project NestJS và ExpressJS**
 
-### **Benchmark Report: Performance Comparison Between NestJS and ExpressJS Services**
+Báo cáo này đánh giá hiệu năng của hai project sử dụng `NestJS` và `ExpressJS`, dựa trên kết quả kiểm thử tải (**load test**) với các endpoint **POST** và **GET**.
 
-This report evaluates the performance of two backend services, `NestJS` and `ExpressJS`, based on a load test for both **POST** and **GET** endpoints.
-
-The `ExpressJS` service is a baseline project without any optimizations.
-While the `NestJS` service includes optimizations:
-- Cache-aside, rate limiting for both **GET** and **POST** requests.
-- More security, and validation for **POST** requests. 
-
----
-
-### **POST** Test Results
-
-| Metric                  | NestJS      | ExpressJS    |
-| ----------------------- | ----------- | ------------ |
-| **Avg Latency**         | 153.03 ms   | 51.72 ms     |
-| **Avg Requests/Second** | 65.54 req/s | 191.15 req/s |
-| **Avg Bytes/Second**    | 20.6 kB     | 44.2 kB      |
-| **Total Requests**      | 4,000       | 11,000       |
-| **Total Data Read**     | 1.24 MB     | 2.65 MB      |
-
-#### **Analysis**
-
-- **Latency:**
-    The `NestJS` service exhibits higher latency (average of 153.03 ms) compared to `ExpressJS` (51.72 ms). The additional validations and securities in `NestJS` are contributing to the increased processing time.
-    
-- **Throughput:**
-    `ExpressJS` handles almost 3 times the number of req/s compared to `NestJS`. This shows a significant performance overhead introduced by the additional features in `NestJS`.
-    
-- **Data Throughput:**  
-    `ExpressJS` transfers more data per second, due to its higher request throughput.
-    
+Project `ExpressJS` là dự án gốc, không áp dụng tối ưu hóa.  
+Trong khi đó, project `NestJS` đã được tối ưu hóa với:
+- Caching theo mô hình cache-aside, giới hạn tần suất (**rate limiting**) cho cả **GET** và **POST** request.
+- Bổ sung các tính năng bảo mật và xác thực (**validation**) cho **POST** request.
 
 ---
 
-### **GET** Test Results
+### Kết quả kiểm thử với POST
 
-| Metric                     | NestJS         | ExpressJS    |
-| -------------------------- | -------------- | ------------ |
-| **Avg Latency**            | 3.93 ms        | 11.59 ms     |
-| **Avg Requests/Second**    | 2,241.35 req/s | 827.54 req/s |
-| **Avg Bytes/Second**       | 771 kB         | 273 kB       |
-| **Total Requests**         | 134,000        | 50,000       |
-| **Non Successful Request** | 14,460         | 13,390       |
-| **Total Data Read**        | 46.3 MB        | 16.4 MB      |
+![avg-latency-post.png](images/avg-latency-post.png)
+![total-requests-post.png](images/total-requests-post.png)
 
-#### **Analysis**
+| Chỉ số                      | NestJS      | ExpressJS    |
+| --------------------------- | ----------- | ------------ |
+| **Độ trễ trung bình**       | 153.03 ms   | 51.72 ms     |
+| **Số req/s trung bình**     | 65.54 req/s | 191.15 req/s |
+| **Bytes/Second trung bình** | 20.6 kB     | 44.2 kB      |
+| **Tổng số Requests**        | 4,000       | 11,000       |
+| **Tổng số Data đã đọc**     | 1.24 MB     | 2.65 MB      |
 
-- **Latency:**  
-    `NestJS` performs better in **GET** requests, with an average latency of 3.93 ms compared to `ExpressJS`’s 11.59 ms. This suggests that `NestJS`'s optimizations like cache-aside has great impact on **GET** requests latency.
+#### **Phân tích**
+
+- **Độ trễ:**
+    Project `NestJS` có độ trễ cao hơn (trung bình 153.03 ms) so với `ExpressJS` (51.72 ms). Nguyên nhân là do các tính năng bảo mật và xác thực bổ sung trong `NestJS` khiến thời gian xử lý tăng lên.
     
-- **Throughput:**  
-    `NestJS` processes more than double the requests per second compared to `ExpressJS`, demonstrating its ability to efficiently handle high loads for read operations.
+- **Thông lượng:**
+    `ExpressJS` xử lý số lượng yêu cầu mỗi giây cao gấp gần 3 lần so với `NestJS`. Điều này cho thấy các tính năng bảo mật và xác thực phía `NestJS` tạo ra một độ trễ đáng kể.
     
-- **Data Throughput:**  
-    `NestJS` handles approximately three times the data transfer compared to `ExpressJS`, correlating with its higher request throughput.
-    
-
 ---
 
-### **Error Analysis**
+### Kết quả kiểm thử với GET
 
-| Metric                | NestJS  | ExpressJS |
+![avg-latency-get.png](images/avg-latency-get.png)
+![requests-get.png](images/requests-get.png)
+
+| Chỉ số                        | NestJS         | ExpressJS    |
+| ----------------------------- | -------------- | ------------ |
+| **Độ trễ trung bình**         | 3.93 ms        | 11.59 ms     |
+| **Số req/s trung bình**       | 2,241.35 req/s | 827.54 req/s |
+| **Bytes/Second trung bình**   | 771 kB         | 273 kB       |
+| **Tổng số Requests**          | 134,000        | 50,000       |
+| **Số lượng Request thất bại** | 14,460         | 13,390       |
+| **Tổng số Data đã đọc**       | 46.3 MB        | 16.4 MB      |
+
+#### **Phân tích**
+
+- **Độ trễ:**  
+    `NestJS` vượt trội trong xử lý **GET** request, với độ trễ trung bình là 3.93 ms so với 11.59 ms của `ExpressJS`. Cho thấy cơ chế caching trong `NestJS` phát huy hiệu quả trong việc giảm độ trễ.
+    
+- **Thông lượng:**  
+    `NestJS` xử lý số lượng req/s cao hơn gấp đôi so với `ExpressJS`, chứng minh khả năng xử lý khối lượng công việc lớn cho các thao tác đọc dữ liệu.
+    
+---
+
+### **Phân tích các Request lỗi**
+
+|                       | NestJS  | ExpressJS |
 | --------------------- | ------- | --------- |
 | **2xx Responses**     | 124,000 | 47,262    |
 | **Non-2xx Responses** | 14,460  | 13,390    |
 
-#### **Observations**
+#### **Quan sát**
 
-- Both services reported a notable number of non-2xx responses, which could be caused by rate limiting, validation failures, or server-side issues.
-- `NestJS` has a slightly higher proportion of errors during **GET** tests, potentially due to the rate limiting.
-
----
-
-### **Summary**
-
-| Metric               | Winner    | Key Insights                                          |
-| -------------------- | --------- | ----------------------------------------------------- |
-| **POST Avg Latency** | ExpressJS | Faster due to lack of additional processing overhead. |
-| **POST Throughput**  | ExpressJS | Handles more requests per second.                     |
-| **GET Avg Latency**  | NestJS    | Faster due to has more optimizations.                 |
-| **GET Throughput**   | NestJS    | Scales better for high-read workloads.                |
+- Cả hai project đều có số lượng đáng kể các **Non-2xx Responses**, có thể do giới hạn tần suất (**rate limiting**), lỗi xác thực, hoặc vấn đề từ phía server.
 
 ---
 
-### **Conclusions and Recommendations**
+### **Tóm tắt**
 
-1. **NestJS Performance:**
-    - **Strengths:** Handles **GET** requests efficiently, even under high load.
-    - **Weaknesses:** High latency and lower throughput for **POST** requests, due to security, and validation.
-2. **ExpressJS Performance:**
-    - **Strengths:** Outperforms in **POST** requests due to minimal processing.
-    - **Weaknesses:** Less efficient in **GET** requests compared to `NestJS`.
-4. **Optimizations for NestJS:**
-    - Consider tuning or bypassing security and validation for certain **POST** operations to reduce latency.
-5. **Next Steps:**
-    - Analyze resource usage (CPU, memory) for both services during the tests to identify any bottlenecks.
+| Chỉ số                         | Winner    | Nhận xét chính                                                                       |
+| ------------------------------ | --------- | ------------------------------------------------------------------------------------ |
+| **Độ trễ trung bình của POST** | ExpressJS | Nhanh hơn do không có xử lý bổ sung phức tạp (Bảo mật và xác thực).                  |
+| **Thông lượng của POST**       | ExpressJS | Xử lý được nhiều req/s hơn do không có xử lý bổ sung phức tạp (Bảo mật và xác thực). |
+| **Độ trễ trung bình của GET**  | NestJS    | Tối ưu hơn nhiều do có sử dụng cache-aside.                                          |
+| **Thông lượng của GET**        | NestJS    | Xử lý tốt với khối lượng lớn các thao tác đọc dữ liệu.                               |
+
+---
+
+### **Kết luận**
+
+1. **NestJS:**
+    - Xử lý tốt số lượng lớn các **GET** request.
+    - Có thêm các biện pháp bảo mật và xác thực.
+2. **ExpressJS:**
+    - Hiệu năng của **POST** có thể vượt trội hơn nhưng đổi lại không có thêm các lớp bảo mật và xác thực.
+    - **GET** request kém hiệu quả hơn nhiều so với **NestJS** do không có các biện pháp tối ưu.
