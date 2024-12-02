@@ -9,7 +9,7 @@ export const API_ENDPOINTS = {
     CREATE: "/url",
     BULK_CREATE: "/url/bulk",
     GET: (id) => `/url/${id}`,
-    GET_BY_USER_ID: "/url", // TODO: Add in BE
+    GET_USER_URLS: "/url/user",
   },
   QR: {
     GENERATE: "/url/qr",

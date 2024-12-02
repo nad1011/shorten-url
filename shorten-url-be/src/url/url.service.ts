@@ -38,7 +38,7 @@ export class UrlService {
         );
         return {
           data: {
-            shortId,
+            shortId: shortId,
             originalUrl: cachedUrl,
           },
           error: null,
@@ -80,7 +80,7 @@ export class UrlService {
   }
 
   // Create short URL service
-  async createShortUrl(originalUrl: string): Promise<Result> {
+  async createShortUrl(originalUrl: string, userId?: string): Promise<Result> {
     try {
       const existingIds = await this.findIdByOriginalUrl(originalUrl);
 
@@ -103,6 +103,7 @@ export class UrlService {
         originalUrl,
         lastAccessed: new Date(),
         accessTimes: 0,
+        userId,
       });
 
       await url.save();
@@ -238,7 +239,7 @@ export class UrlService {
   }
 
   // Generate QR code service
-  async createQrCode(originalUrl: string): Promise<Result> {
+  async createQrCode(originalUrl: string, userId?: string): Promise<Result> {
     try {
       const existingIds = await this.findIdByOriginalUrl(originalUrl);
 
@@ -264,6 +265,7 @@ export class UrlService {
         lastAccessed: new Date(),
         qrCode,
         accessTimes: 0,
+        userId,
       });
 
       await url.save();
@@ -285,6 +287,33 @@ export class UrlService {
     } catch (error) {
       console.error('Error in createQrCode:', error);
       throw new Error('Error generating QR code');
+    }
+  }
+
+  // Find user URLs service
+  async findUserUrls(userId: string): Promise<Result> {
+    try {
+      const urls = await this.urlModel.find({ userId });
+
+      if (!urls) {
+        return {
+          data: [],
+          error: null,
+        };
+      }
+
+      return {
+        data: urls.map((url) => ({
+          originalUrl: url.originalUrl,
+          shortId: url.shortId,
+          qrCode: url.qrCode,
+          accessTimes: url.accessTimes,
+        })),
+        error: null,
+      };
+    } catch (error) {
+      console.error('Error in findUserUrls:', error);
+      throw new Error('Error fetching user URLs');
     }
   }
 

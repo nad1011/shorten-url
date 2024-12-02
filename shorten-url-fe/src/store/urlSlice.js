@@ -31,12 +31,12 @@ export const generateQrCode = createAsyncThunk("url/qr", async (url) => {
   };
 });
 
-export const fetchUrls = createAsyncThunk("url/fetch", async (user) => {
-  const response = urlService.fetch(user.id);
+export const fetchUserUrls = createAsyncThunk("url/user", async () => {
+  const response = urlService.getUserUrls();
   if (response.error) {
     throw new Error(response.error);
   }
-  return response.data;
+  return response;
 });
 
 const urlSlice = createSlice({
@@ -53,16 +53,16 @@ const urlSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch URLs
-      .addCase(fetchUrls.pending, (state) => {
+      // Fetch User URLs
+      .addCase(fetchUserUrls.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchUrls.fulfilled, (state, action) => {
-        state.items = action.payload;
+      .addCase(fetchUserUrls.fulfilled, (state, action) => {
+        state.items = action.payload ? action.payload : [];
         state.loading = false;
       })
-      .addCase(fetchUrls.rejected, (state, action) => {
+      .addCase(fetchUserUrls.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message;
       })

@@ -8,14 +8,12 @@ import AuthModal from "@/components/features/authentication";
 
 const MainLayout = ({ children }) => {
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex h-screen flex-col bg-background">
       <AuthModal />
       <Headers />
-      <div className="flex-1 flex">
+      <div className="flex-1 flex overflow-hidden">
         <Sidebar />
-        <main className="flex-1 overflow-auto p-6">
-          <div className="w-full h-full">{children}</div>
-        </main>
+        <main className="flex-1 overflow-y-auto my-auto">{children}</main>
       </div>
       <Footer />
     </div>

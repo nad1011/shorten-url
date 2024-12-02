@@ -4,8 +4,9 @@ import { useDispatch, useSelector } from "react-redux";
 import Button from "@/components/common/Button";
 import Icon from "@/components/common/Icon";
 import Input from "@/components/common/Input";
+import UrlHistory from "@/components/features/url/UrlHistory";
 import useToast from "@/hooks/useToast";
-import { generateQrCode, fetchUrls } from "@/store/urlSlice";
+import { generateQrCode, fetchUserUrls } from "@/store/urlSlice";
 import { validateUrl } from "@/utils";
 
 const QrPage = () => {
@@ -19,13 +20,13 @@ const QrPage = () => {
   useEffect(() => {
     async function fetchData() {
       if (user) {
-        await dispatch(fetchUrls(user));
+        await dispatch(fetchUserUrls());
       }
     }
     fetchData();
   }, [user, dispatch]);
 
-  const generatedQr = items.filter((item) => item.qrCode).at(0);
+  const generatedQr = user ? null : items.filter((item) => item.qrCode).at(0);
 
   const handleCreateQR = async (e) => {
     e.preventDefault();
@@ -62,67 +63,67 @@ const QrPage = () => {
   };
 
   return (
-    <div className="h-full flex flex-col items-center justify-center">
-      <div className="w-full max-w-lg space-y-8">
-        {/* Header */}
-        <div className="text-center">
-          <h1 className="text-2xl font-bold">QR Code Generator</h1>
-        </div>
-
-        {/* Input Form */}
-        <form onSubmit={handleCreateQR} className="space-y-6" noValidate>
-          <Input
-            value={url}
-            onChange={(e) => {
-              setUrl(e.target.value);
-              setError("");
-            }}
-            placeholder="Enter a URL to generate QR code"
-            error={error}
-          />
-
-          <Button type="submit" disabled={loading} className="w-full">
-            {loading ? (
-              <Icon name="Loader2" className="mr-2 h-5 w-5 animate-spin" />
-            ) : (
-              "Generate QR Code"
-            )}
-          </Button>
-
-          <p className="text-sm text-muted-foreground text-center">
-            Example: https://www.google.com
-          </p>
-        </form>
-
-        {/* Output Section */}
-        {generatedQr && (
-          <div className="flex flex-col items-center space-y-4 pt-4">
-            <h2 className="text-xl font-semibold text-gray-700">
-              Your QR Code
-            </h2>
-
-            <div className="bg-white p-4 rounded-2xl shadow-md">
-              <div
-                dangerouslySetInnerHTML={{ __html: generatedQr.qrCode }}
-                style={{
-                  width: "200px",
-                  height: "200px",
-                }}
-                className="mx-auto"
-              />
-            </div>
-
-            <Button
-              variant="outline"
-              onClick={handleDownload}
-              className="h-11 px-6 rounded-xl flex items-center gap-2 border-2"
-            >
-              <Icon name="Download" size={18} />
-              Download QR Code
-            </Button>
-          </div>
-        )}
+    <div className="mx-auto max-w-xl w-full flex flex-col gap-4">
+      {/* Header */}
+      <div className="text-center w-full">
+        <h1 className="text-2xl font-bold">QR Code Generator</h1>
       </div>
+
+      {/* Input Form */}
+      <form onSubmit={handleCreateQR} className="space-y-6 w-full" noValidate>
+        <Input
+          value={url}
+          onChange={(e) => {
+            setUrl(e.target.value);
+            setError("");
+          }}
+          placeholder="Enter a URL to generate QR code"
+          error={error}
+        />
+
+        <Button type="submit" disabled={loading} className="w-full">
+          {loading ? (
+            <Icon name="Loader2" className="mr-2 h-5 w-5 animate-spin" />
+          ) : (
+            "Generate QR Code"
+          )}
+        </Button>
+
+        <p className="text-sm text-muted-foreground text-center">
+          Example: https://www.google.com
+        </p>
+      </form>
+
+      {/* Output Section */}
+      {!user && generatedQr && (
+        <div className="flex flex-col items-center space-y-4 pt-4">
+          <h2 className="text-xl font-semibold text-gray-700">Your QR Code</h2>
+
+          <div className="bg-white p-4 rounded-2xl shadow-md">
+            <div
+              dangerouslySetInnerHTML={{ __html: generatedQr.qrCode }}
+              style={{
+                width: "200px",
+                height: "200px",
+              }}
+              className="mx-auto"
+            />
+          </div>
+
+          <Button
+            variant="outline"
+            onClick={handleDownload}
+            className="h-11 px-6 rounded-xl flex items-center gap-2 border-2"
+          >
+            <Icon name="Download" size={18} />
+            Download QR Code
+          </Button>
+        </div>
+      )}
+
+      {user && (
+        <UrlHistory urls={items.filter((item) => item.qrCode)} type="qr" />
+      )}
     </div>
   );
 };

@@ -29,4 +29,12 @@ export const urlService = {
         }
       : response.data;
   },
+  getUserUrls: async () => {
+    const response = await api.get(API_ENDPOINTS.URL.GET_USER_URLS);
+    return response.error
+      ? {
+          error: response.error,
+        }
+      : response.data;
+  },
 };

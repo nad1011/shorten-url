@@ -6,6 +6,7 @@ import Icon from "@/components/common/Icon";
 import useAuth from "@/hooks/useAuth";
 import useToast from "@/hooks/useToast";
 import { logOut } from "@/store/authSlice";
+import { clearItems } from "@/store/urlSlice";
 
 const Header = () => {
   const dispatch = useDispatch();
@@ -17,6 +18,7 @@ const Header = () => {
   const handleLogOut = () => {
     try {
       dispatch(logOut());
+      dispatch(clearItems());
       showToast("Logged out successfully", "success");
     } catch (error) {
       console.error(error);

@@ -6,7 +6,7 @@ const LoginPromptBox = () => {
   const { openLoginModal } = useAuth();
 
   return (
-    <div className="bg-muted/50 rounded-lg p-4 text-center">
+    <div className="bg-muted/50 rounded-lg p-4 text-center w-full">
       <p className="text-sm text-muted-foreground">
         Sign in to save your shortened URLs and access them anytime
       </p>
