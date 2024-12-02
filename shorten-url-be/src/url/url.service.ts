@@ -33,7 +33,7 @@ export class UrlService {
     try {
       const cachedUrl = await this.redisClient.hGet('url_mappings', shortId);
       if (cachedUrl) {
-        this.updateLastAccessed(shortId).catch((err) =>
+        await this.updateLastAccessed(shortId).catch((err) =>
           console.error('Error updating visit count:', err),
         );
         return {
@@ -45,12 +45,13 @@ export class UrlService {
         };
       }
 
-      const url = await this.urlModel.findOne({ shortId });
+      const url = await this.urlModel.findOne({ shortId }).then(async (res) => {
+        await this.updateLastAccessed(shortId);
+        return res;
+      });
       if (!url) {
         throw new NotFoundException('URL not found');
       }
-
-      await this.updateLastAccessed(shortId);
 
       await this.cacheManager.set(
         `url:${shortId}`,
@@ -361,6 +362,7 @@ export class UrlService {
       { shortId },
       {
         $set: { lastAccessed: new Date() },
+        $inc: { accessTimes: 1 },
       },
     );
   }

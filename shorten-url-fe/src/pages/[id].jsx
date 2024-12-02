@@ -12,7 +12,6 @@ const RedirectPage = () => {
     const fetchAndRedirect = async () => {
       try {
         const response = await urlService.get(id);
-        console.log("response", response);
         if (response.originalUrl) {
           window.location.href = response.originalUrl;
         } else {
